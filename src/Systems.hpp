@@ -6,9 +6,8 @@
 // 输入系统
 class InputSystem {
 public:
-    void update(entt::registry& registry);
-    
-    bool isKeyDown(SDL_Scancode key) const;
+    void update(const SDL_Event& event, entt::registry& registry);
+
     bool shouldQuit() const;
     
 private:

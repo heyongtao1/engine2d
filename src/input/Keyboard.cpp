@@ -1,4 +1,5 @@
 #include "Keyboard.hpp"
+#include <iostream>
 
 void Keyboard::Update()
 {
@@ -15,6 +16,7 @@ void Keyboard::ProcessEvent(const SDL_Event& event)
         if (event.key.keysym.scancode < SDL_NUM_SCANCODES)
         {
             m_keys[event.key.keysym.scancode].isDown = true;
+            std::cout << "key down :" << event.key.keysym.scancode << std::endl;
         }
     }
     else if (event.type == SDL_KEYUP)

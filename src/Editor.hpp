@@ -35,7 +35,7 @@ private:
     entt::registry& registry;
     SDL_Renderer* renderer = nullptr;
     
-    bool editorMode = true;
+    bool editorMode = false;
     bool showDemoWindow = false;
     bool showEntityList = true;
     bool showInspector = true;

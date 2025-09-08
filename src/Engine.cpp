@@ -110,19 +110,23 @@ void GameEngine::shutdown() {
 void GameEngine::processInput() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        // 先让编辑器处理事件
-        editor->processEvent(event);
         
         // 如果编辑器处于激活状态，不处理游戏输入
         if (editor->isEditorMode()) {
+
+            // 先让编辑器处理事件
+            editor->processEvent(event);
+
             if (event.type == SDL_QUIT) {
                 isRunning = false;
             }
             continue;
         }
+
+        std::cout << "game engine event type:" << event.type << std::endl;
         
         // 否则，让输入系统处理事件
-        inputSystem.update(registry);
+        inputSystem.update(event, registry);
         if (inputSystem.shouldQuit()) {
             isRunning = false;
         }

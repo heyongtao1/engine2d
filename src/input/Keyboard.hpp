@@ -288,6 +288,11 @@ public:
         return m_keys[scancode];
     }
 
+    bool isKeyDown(int scancode)
+    {
+        return GetKeyState(scancode).isDown;
+    }
+
 private:
     /**
      * @brief 构造函数，私有化以强制使用单例模式。

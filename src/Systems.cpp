@@ -1,22 +1,12 @@
 #include "Systems.hpp"
 #include "Components.hpp"
+#include "Keyboard.hpp"
+#include <iostream>
+void InputSystem::update(const SDL_Event& event, entt::registry& registry) {
 
-void InputSystem::update(entt::registry& registry) {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_QUIT) {
-            quit = true;
-        }
-        
-        if (event.type == SDL_KEYDOWN) {
-            keys[event.key.keysym.scancode] = true;
-        }
-        
-        if (event.type == SDL_KEYUP) {
-            keys[event.key.keysym.scancode] = false;
-        }
-    }
-    
+    Singleton<Keyboard>::GetInstance().Update();
+    Singleton<Keyboard>::GetInstance().ProcessEvent(event);
+
     // 处理玩家输入
     auto view = registry.view<PlayerControl, Velocity>();
     for (auto entity : view) {
@@ -24,10 +14,13 @@ void InputSystem::update(entt::registry& registry) {
         velocity.dx = 0;
         velocity.dy = 0;
         
-        if (isKeyDown(SDL_SCANCODE_W)) velocity.dy = -10;
-        if (isKeyDown(SDL_SCANCODE_S)) velocity.dy = 10;
-        if (isKeyDown(SDL_SCANCODE_A)) velocity.dx = -10;
-        if (isKeyDown(SDL_SCANCODE_D)) velocity.dx = 10;
+        if (Singleton<Keyboard>::GetInstance().isKeyDown(SDL_SCANCODE_W)) {
+            velocity.dy = -10;
+            std::cout << "dy:" << velocity.dy << " dx:" << velocity.dx << std::endl;
+        }
+        if (Singleton<Keyboard>::GetInstance().isKeyDown(SDL_SCANCODE_S)) velocity.dy = 10;
+        if (Singleton<Keyboard>::GetInstance().isKeyDown(SDL_SCANCODE_A)) velocity.dx = -10;
+        if (Singleton<Keyboard>::GetInstance().isKeyDown(SDL_SCANCODE_D)) velocity.dx = 10;
         
         // 标准化对角线移动
         if (velocity.dx != 0 && velocity.dy != 0) {
@@ -40,10 +33,6 @@ void InputSystem::update(entt::registry& registry) {
         velocity.dx *= control.speed;
         velocity.dy *= control.speed;
     }
-}
-
-bool InputSystem::isKeyDown(SDL_Scancode key) const {
-    return keys[key];
 }
 
 bool InputSystem::shouldQuit() const {
