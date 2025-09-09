@@ -60,6 +60,9 @@ bool GameEngine::initialize(const char* title, int width, int height) {
     isRunning = true;
     lastUpdateTime = SDL_GetTicks();
     
+    // 初始化场景管理器
+    m_sceneManager = std::make_unique<SceneManager>(this);
+
     return true;
 }
 
@@ -139,6 +142,7 @@ void GameEngine::update(float deltaTime) {
         movementSystem.update(registry, deltaTime);
         animationSystem.update(registry);
         collisionSystem.update(registry);
+        m_sceneManager->update(deltaTime);
         return;
     }
     
@@ -150,9 +154,7 @@ void GameEngine::render() {
 
     if (!editor->isEditorMode()) {
         // 渲染游戏场景
-        if (renderSystem) {
-            renderSystem->update(registry);
-        }
+        renderSystem->update(registry);
         return;
     }
     

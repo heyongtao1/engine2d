@@ -5,7 +5,7 @@ void Keyboard::Update()
 {
     for (auto& key : m_keys)
     {
-        key.wasDown = key.isDown;
+        key._wasDown = key._isDown;
     }
 }
 
@@ -15,7 +15,7 @@ void Keyboard::ProcessEvent(const SDL_Event& event)
     {
         if (event.key.keysym.scancode < SDL_NUM_SCANCODES)
         {
-            m_keys[event.key.keysym.scancode].isDown = true;
+            m_keys[event.key.keysym.scancode]._isDown = true;
             std::cout << "key down :" << event.key.keysym.scancode << std::endl;
         }
     }
@@ -23,7 +23,7 @@ void Keyboard::ProcessEvent(const SDL_Event& event)
     {
         if (event.key.keysym.scancode < SDL_NUM_SCANCODES)
         {
-            m_keys[event.key.keysym.scancode].isDown = false;
+            m_keys[event.key.keysym.scancode]._isDown = false;
         }
     }
 }

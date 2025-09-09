@@ -5,6 +5,7 @@
 #include "Systems.hpp"
 #include "Resources.hpp"
 #include "Editor.hpp"
+#include "SceneManager.hpp"
 
 class GameEngine {
 public:
@@ -23,6 +24,8 @@ public:
     void destroyEntity(entt::entity entity);
     
     Editor& getEditor() { return *editor; }
+
+    SceneManager& getSceneManager() { return *m_sceneManager; }
     
 private:
     void processInput();
@@ -43,6 +46,8 @@ private:
     
     bool isRunning = false;
     Uint32 lastUpdateTime = 0;
+
+    std::unique_ptr<SceneManager> m_sceneManager;
     
     const int FPS = 60;
     const int FRAME_DELAY = 1000 / FPS;

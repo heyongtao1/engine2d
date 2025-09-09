@@ -16,24 +16,24 @@ struct Key
      * @brief 检查按键当前是否处于按下状态。
      * @return 如果按键当前被按下，则返回 true；否则返回 false。
      */
-    [[nodiscard]] bool IsPressed() const { return isDown; }
+    [[nodiscard]] bool isPressed() const { return _isDown; }
 
     /**
      * @brief 检查按键是否在当前帧被按下（从抬起到按下的瞬间）。
      * @return 如果按键在当前帧被按下，则返回 true；否则返回 false。
      */
-    [[nodiscard]] bool IsDown() const { return isDown && !wasDown; }
+    [[nodiscard]] bool isDown() const { return _isDown && !_wasDown; }
 
     /**
      * @brief 检查按键是否在当前帧被抬起（从按下到抬起的瞬间）。
      * @return 如果按键在当前帧被抬起，则返回 true；否则返回 false。
      */
-    [[nodiscard]] bool IsUp() const { return !isDown && wasDown; }
+    [[nodiscard]] bool isUp() const { return !_isDown && _wasDown; }
 
 private:
     friend class Keyboard;
-    bool isDown = false; ///< 按键当前是否被按下。
-    bool wasDown = false; ///< 按键上一帧是否被按下。
+    bool _isDown = false; ///< 按键当前是否被按下。
+    bool _wasDown = false; ///< 按键上一帧是否被按下。
 };
 
 /**
@@ -290,7 +290,7 @@ public:
 
     bool isKeyDown(int scancode)
     {
-        return GetKeyState(scancode).isDown;
+        return GetKeyState(scancode)._isDown;
     }
 
 private:

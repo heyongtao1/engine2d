@@ -52,6 +52,8 @@ add_executable(GameEngine
     src/Resources.cpp
     src/Editor.cpp
     src/input/Keyboard.cpp
+    src/Scene.cpp
+    src/SceneManager.cpp
     main.cpp
     # ImGui 文件
     deps/imgui/imgui.cpp
