@@ -43,6 +43,8 @@ include_directories(
     # imgui
     ${CMAKE_SOURCE_DIR}/deps/imgui
     ${CMAKE_SOURCE_DIR}/deps/imgui/backends
+    # json
+    ${CMAKE_SOURCE_DIR}/deps/json/include/
 )
 
 # 添加可执行文件
@@ -54,6 +56,7 @@ add_executable(GameEngine
     src/input/Keyboard.cpp
     src/Scene.cpp
     src/SceneManager.cpp
+    src/Serializer.cpp
     main.cpp
     # ImGui 文件
     deps/imgui/imgui.cpp

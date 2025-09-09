@@ -17,6 +17,7 @@ struct Velocity {
 // 精灵组件
 struct Sprite {
     SDL_Texture* texture = nullptr;
+    std::string texturePath;
     SDL_Rect srcRect;
     SDL_Rect dstRect;
     bool visible = true;

@@ -1,6 +1,8 @@
 #include "SceneManager.hpp"
 #include "Engine.hpp"
 #include <iostream>
+#include <fstream>
+#include "Serializer.hpp"
 
 SceneManager::SceneManager(GameEngine* game) 
     : m_game(game), m_currentScene(nullptr) {}
@@ -55,4 +57,51 @@ std::string SceneManager::getCurrentSceneName() const {
 
 bool SceneManager::hasScene(const std::string& sceneName) const {
     return m_sceneFactories.find(sceneName) != m_sceneFactories.end();
+}
+
+void SceneManager::saveScene(std::string& savePath, Scene* scene)
+{
+    assert(scene);
+
+    try
+    {
+        // 写入文件
+        std::ofstream file(savePath);
+
+        nlohmann::json saveJson = SceneSerializer::serializer(scene);
+
+        file << saveJson.dump(4); // 缩进4个空格，便于阅读
+
+        file.close();
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+}
+
+void SceneManager::loadScene(std::string& loadPath, Scene* scene)
+{
+    assert(scene);
+
+    try
+    {
+        // 读取文件
+        std::ifstream file(loadPath);
+        if (!file.is_open()) {
+            std::cerr << "Failed to open file: " << loadPath << std::endl;
+            return ;
+        }
+        
+        nlohmann::json loadJson;
+        file >> loadJson;
+        file.close();
+
+        SceneSerializer::derializer(loadJson, scene);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
 }

@@ -57,12 +57,13 @@ bool GameEngine::initialize(const char* title, int width, int height) {
     }
     
     renderSystem = new RenderSystem(renderer);
-    isRunning = true;
-    lastUpdateTime = SDL_GetTicks();
-    
+
     // 初始化场景管理器
     m_sceneManager = std::make_unique<SceneManager>(this);
 
+    isRunning = true;
+    lastUpdateTime = SDL_GetTicks();
+    
     return true;
 }
 

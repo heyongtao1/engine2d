@@ -33,6 +33,11 @@ public:
     std::string getCurrentSceneName() const;
     
     bool hasScene(const std::string& sceneName) const;
+
+    // 场景保存
+    void saveScene(std::string& savePath, Scene* scene);
+    // 场景加载
+    void loadScene(std::string& loadPath, Scene* scene);
 };
 
 // 模板方法实现

@@ -25,6 +25,7 @@ int main(int argc, char* argv[]) {
         SDL_QueryTexture(playerTexture, nullptr, nullptr, &w, &h);
         
         auto& sprite = engine.getRegistry().emplace<Sprite>(player);
+        sprite.texturePath = "assets/player.png";
         sprite.texture = playerTexture;
         sprite.srcRect = {0, 0, w, h};
         sprite.dstRect = {static_cast<int>(playerPos.x), static_cast<int>(playerPos.y), w, h};
@@ -56,6 +57,7 @@ int main(int argc, char* argv[]) {
             SDL_QueryTexture(enemyTexture, nullptr, nullptr, &w, &h);
             
             auto& sprite = engine.getRegistry().emplace<Sprite>(enemy);
+            sprite.texturePath = "assets/enemy.png";
             sprite.texture = enemyTexture;
             sprite.srcRect = {0, 0, w, h};
             sprite.dstRect = {static_cast<int>(enemyPos.x), static_cast<int>(enemyPos.y), w, h};
