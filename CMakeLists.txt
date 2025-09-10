@@ -30,44 +30,62 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/deps/entt)
 message(${SDL2_IMAGE_INCLUDE_DIRS})
 message(${SDL2_TTF_INCLUDE_DIRS})
 
-# 包含目录
+# 设置项目目录
+set(ROOT_DIR ${CMAKE_SOURCE_DIR})
+set(SOURCE_DIR ${ROOT_DIR}/src)
+set(DEPS_DIR ${ROOT_DIR}/deps)
+
+# 自动收集所有源文件（包括子目录）
+file(GLOB_RECURSE SOURCE_FILES 
+    "${SOURCE_DIR}/*.cpp"
+    "${SOURCE_DIR}/*.c"
+)
+
+message("======================================================")
+
+# 自动收集所有头文件目录（递归查找所有子目录）
+file(GLOB  ALL_DIRS "${SOURCE_DIR}/*")
+
+# 过滤出目录
+set(INCLUDE_DIRS "")
+foreach(item ${ALL_DIRS})
+    if(IS_DIRECTORY ${item})
+        list(APPEND INCLUDE_DIRS ${item})
+        # 递归获取子目录
+        file(GLOB SUB_DIRS "${item}/*")
+        foreach(sub_item ${SUB_DIRS})
+            if(IS_DIRECTORY ${sub_item})
+                list(APPEND INCLUDE_DIRS ${sub_item})
+            endif()
+        endforeach()
+    endif()
+endforeach()
+
+# 设置 ImGui 源文件
+set(IMGUI_SOURCES
+    ${DEPS_DIR}/imgui/imgui.cpp
+    ${DEPS_DIR}/imgui/imgui_demo.cpp
+    ${DEPS_DIR}/imgui/imgui_draw.cpp
+    ${DEPS_DIR}/imgui/imgui_tables.cpp
+    ${DEPS_DIR}/imgui/imgui_widgets.cpp
+    ${DEPS_DIR}/imgui/backends/imgui_impl_sdl2.cpp
+    ${DEPS_DIR}/imgui/backends/imgui_impl_sdlrenderer2.cpp
+)
+
+# 设置包含目录
 include_directories(
-    include
+    ${SOURCE_DIR}          # 主源码目录
+    ${INCLUDE_DIRS}        # 所有子目录
     ${SDL2_INCLUDE_DIRS}
     ${SDL2_IMAGE_INCLUDE_DIRS}
     ${SDL2_TTF_INCLUDE_DIRS}
-    # project include
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/input
-    ${CMAKE_SOURCE_DIR}/src/utils
-    # imgui
-    ${CMAKE_SOURCE_DIR}/deps/imgui
-    ${CMAKE_SOURCE_DIR}/deps/imgui/backends
-    # json
-    ${CMAKE_SOURCE_DIR}/deps/json/include/
+    ${DEPS_DIR}/imgui
+    ${DEPS_DIR}/imgui/backends
+    ${DEPS_DIR}/json/include
 )
 
-# 添加可执行文件
-add_executable(GameEngine
-    src/Engine.cpp
-    src/Systems.cpp
-    src/Resources.cpp
-    src/Editor.cpp
-    src/input/Keyboard.cpp
-    src/Scene.cpp
-    src/SceneManager.cpp
-    src/Serializer.cpp
-    main.cpp
-    # ImGui 文件
-    deps/imgui/imgui.cpp
-    deps/imgui/imgui_demo.cpp
-    deps/imgui/imgui_draw.cpp
-    deps/imgui/imgui_tables.cpp
-    deps/imgui/imgui_widgets.cpp
-    # ImGui SDL2 后端
-    deps/imgui/backends/imgui_impl_sdl2.cpp
-    deps/imgui/backends/imgui_impl_sdlrenderer2.cpp
-)
+# 创建可执行文件
+add_executable(GameEngine main.cpp ${SOURCE_FILES} ${IMGUI_SOURCES})
 
 # 这些变量都在cmake里定义了
 message(${SDL2_LIBDIR})
@@ -81,6 +99,7 @@ link_directories(
     ${SDL2_TTF_LIBRARIE_DIRS}
 )
 
+# 查找库目录
 find_library(SDL2_LIBRARY SDL2 PATHS ${SDL2_LIBDIR})
 find_library(SDL2_IMAGE_LIBRARY SDL2_image PATHS ${SDL2_IMAGE_LIBRARIE_DIRS})
 find_library(SDL2_TTF_LIBRARY SDL2_ttf PATHS ${SDL2_TTF_LIBRARIE_DIRS})
