@@ -3,6 +3,8 @@
 #include <entt/entt.hpp>
 #include <SDL.h>
 #include "imgui.h"
+#include <map>
+#include <functional>
 
 class GameEngine;
 
@@ -27,21 +29,27 @@ private:
     void renderInspector();
     void renderResourceView();
     void renderStats();
+    void renderCreateEntityPopup();
+    void renderAddComponentPopup();
     
-    void handleEntityCreation();
+    void createEmptyScene();
+    void createEntity();
+    void addComponentToEntity(entt::entity entity, const std::string& componentType);
     void handleEntityDeletion(entt::entity entity);
     
     GameEngine& engine;
     entt::registry& registry;
-    SDL_Renderer* renderer = nullptr;
+    SDL_Renderer* renderer;
     
-    bool editorMode = false;
+    bool editorMode = true;
     bool showDemoWindow = false;
     bool showEntityList = true;
     bool showInspector = true;
     bool showSceneView = true;
     bool showResourceView = false;
     bool showStats = true;
+    bool showCreateEntityPopup = false;
+    bool showAddComponentPopup = false;
     
     entt::entity selectedEntity = entt::null;
     
@@ -54,4 +62,7 @@ private:
     
     // 资源浏览器相关
     char assetPathBuffer[256] = "assets/";
+    
+    // 组件类型映射
+    std::map<std::string, std::function<void(entt::entity)>> componentCreators;
 };

@@ -6,8 +6,35 @@
 #include "imgui_impl_sdlrenderer2.h"
 #include <algorithm>
 #include <string>
+#include <iostream>
+
 Editor::Editor(GameEngine& engine) 
-    : engine(engine), registry(engine.getRegistry()){}
+    : engine(engine), registry(engine.getRegistry()) {
+    // 初始化组件创建器映射
+    componentCreators["Position"] = [this](entt::entity entity) {
+        registry.emplace<Position>(entity, 0.0f, 0.0f);
+    };
+    
+    componentCreators["Velocity"] = [this](entt::entity entity) {
+        registry.emplace<Velocity>(entity, 0.0f, 0.0f);
+    };
+    
+    componentCreators["Sprite"] = [this](entt::entity entity) {
+        registry.emplace<Sprite>(entity);
+    };
+    
+    componentCreators["Collider"] = [this](entt::entity entity) {
+        registry.emplace<Collider>(entity);
+    };
+    
+    componentCreators["Tag"] = [this](entt::entity entity) {
+        registry.emplace<Tag>(entity, "New Entity");
+    };
+    
+    componentCreators["PlayerControl"] = [this](entt::entity entity) {
+        registry.emplace<PlayerControl>(entity);
+    };
+}
 
 Editor::~Editor() {
     ImGui_ImplSDLRenderer2_Shutdown();
@@ -26,7 +53,8 @@ bool Editor::initialize() {
     renderer = engine.getRenderer(); // 在这里获取渲染器
 
     // 检查渲染器是否有效
-    if (renderer == nullptr) {
+    if (!renderer) {
+        std::cerr << "Renderer is null in Editor::initialize()!" << std::endl;
         return false;
     }
 
@@ -68,6 +96,9 @@ void Editor::update(float deltaTime) {
     if (showResourceView) renderResourceView();
     if (showStats) renderStats();
     if (showDemoWindow) ImGui::ShowDemoWindow(&showDemoWindow);
+
+    renderCreateEntityPopup();
+    renderAddComponentPopup();
 }
 
 void Editor::render() {
@@ -82,9 +113,7 @@ void Editor::renderMainMenu() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New Scene")) {
-                // 清空当前场景
-                registry.clear();
-                selectedEntity = entt::null;
+                createEmptyScene();
             }
             if (ImGui::MenuItem("Save Scene")) {
                 // 保存场景逻辑
@@ -99,6 +128,13 @@ void Editor::renderMainMenu() {
             ImGui::EndMenu();
         }
         
+        if (ImGui::BeginMenu("Edit")) {
+            if (ImGui::MenuItem("Create Entity")) {
+                showCreateEntityPopup = true;
+            }
+            ImGui::EndMenu();
+        }
+        
         if (ImGui::BeginMenu("View")) {
             ImGui::MenuItem("Entity List", NULL, &showEntityList);
             ImGui::MenuItem("Inspector", NULL, &showInspector);
@@ -106,13 +142,6 @@ void Editor::renderMainMenu() {
             ImGui::MenuItem("Resource View", NULL, &showResourceView);
             ImGui::MenuItem("Stats", NULL, &showStats);
             ImGui::MenuItem("ImGui Demo", NULL, &showDemoWindow);
-            ImGui::EndMenu();
-        }
-        
-        if (ImGui::BeginMenu("Entity")) {
-            if (ImGui::MenuItem("Create Empty")) {
-                handleEntityCreation();
-            }
             ImGui::EndMenu();
         }
         
@@ -153,11 +182,103 @@ void Editor::renderEntityList() {
     }
     
     // 添加实体按钮
-    if (ImGui::Button("+ Add Entity")) {
-        handleEntityCreation();
+    if (ImGui::Button("+ Create Entity")) {
+        showCreateEntityPopup = true;
     }
     
     ImGui::End();
+}
+
+void Editor::renderCreateEntityPopup() {
+    // 首先检查是否需要打开弹出窗口
+    if (showCreateEntityPopup) {
+        ImGui::OpenPopup("Create Entity");
+        showCreateEntityPopup = false; // 重置标志，避免重复打开
+    }
+    
+    // 设置弹出窗口的大小
+    ImGui::SetNextWindowSize(ImVec2(400, 200), ImGuiCond_FirstUseEver);
+    
+    // 开始模态弹出窗口
+    if (ImGui::BeginPopupModal("Create Entity", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        static char entityName[128] = "New Entity";
+        
+        ImGui::Text("Create a new entity:");
+        ImGui::Separator();
+        
+        ImGui::InputText("Name", entityName, IM_ARRAYSIZE(entityName));
+        
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+        
+        // 按钮布局
+        if (ImGui::Button("Create", ImVec2(120, 0))) {
+            createEntity();
+            if (registry.all_of<Tag>(selectedEntity)) {
+                auto& tag = registry.get<Tag>(selectedEntity);
+                tag.name = entityName;
+            }
+            // 重置输入框
+            strcpy(entityName, "New Entity");
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+            // 重置输入框
+            strcpy(entityName, "New Entity");
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::EndPopup();
+    }
+}
+
+void Editor::renderAddComponentPopup() {
+    // 首先检查是否需要打开弹出窗口
+    if (showAddComponentPopup) {
+        ImGui::OpenPopup("Add Component");
+        showAddComponentPopup = false; // 重置标志，避免重复打开
+    }
+    
+    // 设置弹出窗口的大小
+    ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
+    
+    // 开始模态弹出窗口
+    if (ImGui::BeginPopupModal("Add Component", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Select component type to add:");
+        ImGui::Separator();
+        
+        // 列出所有可用的组件类型
+        for (const auto& [name, creator] : componentCreators) {
+            // 检查实体是否已经有这个组件
+            bool hasComponent = false;
+            if (name == "Position") hasComponent = registry.all_of<Position>(selectedEntity);
+            else if (name == "Velocity") hasComponent = registry.all_of<Velocity>(selectedEntity);
+            else if (name == "Sprite") hasComponent = registry.all_of<Sprite>(selectedEntity);
+            else if (name == "Collider") hasComponent = registry.all_of<Collider>(selectedEntity);
+            else if (name == "Tag") hasComponent = registry.all_of<Tag>(selectedEntity);
+            else if (name == "PlayerControl") hasComponent = registry.all_of<PlayerControl>(selectedEntity);
+            
+            // 如果实体还没有这个组件，显示添加按钮
+            if (!hasComponent) {
+                if (ImGui::Button(name.c_str(), ImVec2(-1, 0))) {
+                    addComponentToEntity(selectedEntity, name);
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::Spacing();
+            }
+        }
+        
+        ImGui::Separator();
+        
+        if (ImGui::Button("Cancel", ImVec2(-1, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::EndPopup();
+    }
 }
 
 void Editor::renderInspector() {
@@ -188,10 +309,6 @@ void Editor::renderInspector() {
                 ImGui::DragFloat("X", &position.x, 1.0f);
                 ImGui::DragFloat("Y", &position.y, 1.0f);
             }
-        } else {
-            if (ImGui::Button("Add Position Component")) {
-                registry.emplace<Position>(selectedEntity, 0.0f, 0.0f);
-            }
         }
         
         // 显示和编辑速度组件
@@ -201,17 +318,13 @@ void Editor::renderInspector() {
                 ImGui::DragFloat("dX", &velocity.dx, 0.1f);
                 ImGui::DragFloat("dY", &velocity.dy, 0.1f);
             }
-        } else {
-            if (ImGui::Button("Add Velocity Component")) {
-                registry.emplace<Velocity>(selectedEntity, 0.0f, 0.0f);
-            }
         }
         
         // 显示和编辑精灵组件
         if (registry.all_of<Sprite>(selectedEntity)) {
             if (ImGui::CollapsingHeader("Sprite")) {
                 auto& sprite = registry.get<Sprite>(selectedEntity);
-                ImGui::Text("Texture: %p", sprite.texture);
+                ImGui::Text("Texture: %s", sprite.texturePath.c_str());
                 ImGui::Checkbox("Visible", &sprite.visible);
                 
                 // 纹理选择器
@@ -219,48 +332,40 @@ void Editor::renderInspector() {
                     // 打开纹理选择对话框
                 }
             }
-        } else {
-            if (ImGui::Button("Add Sprite Component")) {
-                registry.emplace<Sprite>(selectedEntity);
-            }
         }
-        
-        // 添加其他组件...
         
         // 添加组件按钮
         ImGui::Separator();
         if (ImGui::Button("Add Component")) {
-            ImGui::OpenPopup("AddComponentPopup");
-        }
-        
-        if (ImGui::BeginPopup("AddComponentPopup")) {
-            if (!registry.all_of<Position>(selectedEntity) && 
-                ImGui::MenuItem("Position")) {
-                registry.emplace<Position>(selectedEntity, 0.0f, 0.0f);
-            }
-            
-            if (!registry.all_of<Velocity>(selectedEntity) && 
-                ImGui::MenuItem("Velocity")) {
-                registry.emplace<Velocity>(selectedEntity, 0.0f, 0.0f);
-            }
-            
-            if (!registry.all_of<Sprite>(selectedEntity) && 
-                ImGui::MenuItem("Sprite")) {
-                registry.emplace<Sprite>(selectedEntity);
-            }
-            
-            if (!registry.all_of<Collider>(selectedEntity) && 
-                ImGui::MenuItem("Collider")) {
-                registry.emplace<Collider>(selectedEntity);
-            }
-            
-            ImGui::EndPopup();
+            showAddComponentPopup = true;
         }
     } else {
         ImGui::Text("No entity selected");
     }
     
     ImGui::End();
+}
+
+void Editor::createEmptyScene() {
+    registry.clear();
+    selectedEntity = entt::null;
+    std::cout << "Created empty scene" << std::endl;
+}
+
+void Editor::createEntity() {
+    selectedEntity = registry.create();
+    registry.emplace<Tag>(selectedEntity, "New Entity");
+    registry.emplace<Position>(selectedEntity, 0.0f, 0.0f);
+    std::cout << "Created new entity: " << static_cast<uint32_t>(selectedEntity) << std::endl;
+}
+
+void Editor::addComponentToEntity(entt::entity entity, const std::string& componentType) {
+    auto it = componentCreators.find(componentType);
+    if (it != componentCreators.end()) {
+        it->second(entity);
+        std::cout << "Added " << componentType << " component to entity " 
+                  << static_cast<uint32_t>(entity) << std::endl;
+    }
 }
 
 void Editor::renderSceneView() {
@@ -357,15 +462,6 @@ void Editor::renderStats() {
     // ImGui::Text("  Collider: %zu", registry.size<Collider>());
     
     ImGui::End();
-}
-
-void Editor::handleEntityCreation() {
-    auto entity = engine.createEntity();
-    static int name_id = 0;
-    std::string new_name = std::string("New Entity") + std::to_string(name_id++);
-    registry.emplace<Tag>(entity, new_name.c_str());
-    registry.emplace<Position>(entity, 0.0f, 0.0f);
-    selectedEntity = entity;
 }
 
 void Editor::handleEntityDeletion(entt::entity entity) {
